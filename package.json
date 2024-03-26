@@ -5,17 +5,22 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
+    "start": "node data/event_ids.js"
   },
   "dependencies": {
+    "axios": "^1.6.8",
     "cheerio": "^1.0.0-rc.10",
+    "country-list": "^2.3.0",
     "express": "^4.17.2",
+    "geocoder": "^0.2.3",
+    "geonames": "^0.2.1",
+    "puppeteer": "^22.6.0",
     "request": "^2.88.2"
   },
   "engines": {
     "node": "16.x"
   },
-  "author": "Nathan Liu",
+  "author": "Victor Maina",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^2.0.15"

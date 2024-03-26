@@ -1,3 +1,103 @@
+const request = require('request');
+const cheerio = require('cheerio');
+const countryList = require('country-list');
+const Geonames = require('geonames');
+
+
+const url = 'https://www.ewrc-results.com/season/2024/';
+const START_ID_2022 = 73369; // Last ID for 2022
+const START_ID_2023 = 80000; // Starting ID for 2023
+const START_ID_2024 = 90000; // Starting ID for 2024
+
+// Initialize GeoNames client
+//const geoNamesClient = new Geonames({ username: 'vicwithai' });
+//const Geonames = require('geonames');
+
+// Use the static method provided by the GeoNames library directly
+//const Geonames = require('geonames');
+
+async function getCountryInfo() {
+    try {
+        const countryInfo = await Geonames.countryInfo({ country: 'US' });
+        console.log(countryInfo);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+getCountryInfo();
+
+
+
+
+
+// Function to generate sequential IDs for each year
+function generateId(year, index) {
+    if (year === '2022') {
+        return (START_ID_2022 + index).toString();
+    } else if (year === '2023') {
+        return (START_ID_2023 + index).toString();
+    } else if (year === '2024') {
+        return (START_ID_2024 + index).toString();
+    }
+}
+
+// Function to check if a word corresponds to a country name using the country-list library
+function isCountryName(word) {
+    return countryList.getName(word) !== undefined;
+}
+
+// Function to check if a word corresponds to a place name using GeoNames
+async function isPlaceName(word) {
+    try {
+        const result = await geoNamesClient.search({ q: word });
+        return result && result.geonames && result.geonames.length > 0;
+    } catch (error) {
+        console.error('Error while checking place name:', error);
+        return false;
+    }
+}
+
+// Object to store event IDs
+const EVENT_IDS = {};
+
+// Make a GET request to fetch the HTML content of the webpage
+request(url, async function(error, response, html) {
+    if (!error && response.statusCode == 200) {
+        // Load the HTML content into Cheerio
+        const $ = cheerio.load(html);
+
+        // Select all items with the specified class and iterate over them
+        $('.season-event.text-center.mt-3.position-relative').each(async function(index, element) {
+            // Extract the text content of each item
+            let itemText = $(this).text().trim();
+            // Remove unwanted characters at the beginning of the event name
+            itemText = itemText.replace(/^\d+\.\s*/, ''); // Remove digits followed by a dot and whitespace
+            const parts = itemText.split(/\s{2,}/); // Split by 2 or more spaces
+            const year = parts[0].trim();
+            const eventName = parts.slice(1).join(' ').trim(); // Join all parts except the first one as the event name
+            // Extract country name or place name from event name
+            const country = parts.find(async word => await isPlaceName(word) || isCountryName(word)) || '';
+            const name = eventName.replace(country, '').trim().toLowerCase().replace(/\s+/g, '-');
+            const id = generateId(year, index); // Generate ID based on year and index
+            
+            // Add event ID to the corresponding year and country in the EVENT_IDS object
+            if (!EVENT_IDS[year]) {
+                EVENT_IDS[year] = {};
+            }
+            if (!EVENT_IDS[year][country]) {
+                EVENT_IDS[year][country] = {};
+            }
+            EVENT_IDS[year][country][name] = { name: name, id: id };
+        });
+
+        console.log(EVENT_IDS); // Output the generated event IDs
+    } else {
+        console.log('Error fetching webpage:', error);
+    }
+});
+
+
 module.exports = {
 
 EVENT_IDS : {
@@ -9,7 +109,7 @@ EVENT_IDS : {
         'portugal' : {name: "vodafone-rally-de-portugal", id: '73360'},
         'sardinia' : {name: "rally-italia-sardegna", id: '73361'},
         'kenya' : {name: "safari-rally-kenya", id: '73362'},
-        'safari' : {name: "safari-rally-kenya", id: '73362'},
+        'Kenya' : {name: "safari-rally-kenya", id: '73362'},
         'estonia' : {name: "rally-estonia", id: '73363'},
         'finland' : {name: "rally-finland", id: '73364'},
         'acropolis' : {name: "acropolis-rally", id: '73366'},
@@ -148,3 +248,6 @@ EVENT_IDS : {
 }
 
 }
+
+
+

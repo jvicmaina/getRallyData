@@ -7,6 +7,24 @@ var app = express();
 
 const { EVENT_IDS } = require('../data/event_ids.js')
 
+app.get('/api/season/years', function(req, res) {
+    let url = 'https://www.ewrc-results.com/season/';
+    request(url, function(error, response, html) {
+        if (!error) {
+            let $ = cheerio.load(html);
+            let seasons = [];
+            $('.d-flex.justify-content-start.flex-wrap.text-center.fs-091 a').each(function() {
+                let season = $(this).text();
+                seasons.push(season);
+            });
+            res.send(seasons);
+        } else {
+            res.status(500).send("Internal Server Error");
+        }
+    });
+});
+
+
 app.get('/api/rally/getids', function(req, res) {
 
     const year = req.query.year;
